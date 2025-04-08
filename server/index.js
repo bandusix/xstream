@@ -19,9 +19,9 @@ app.post('/upload-m3u', upload.single('m3uFile'), (req, res) => {
     // 假设解析M3U文件并生成频道列表
     const channels = parseM3U(data);
 
-    // 用户名和密码（假设从请求中获取）
-    const username = req.body.username || 'defaultUser';
-    const password = req.body.password || 'defaultPass';
+    // 使用会话中的用户ID作为用户名
+    const username = req.session.userId || 'defaultUser'; 
+    const password = 'defaultPass'; // 可以根据需要生成或存储密码
 
     // 生成Xtream API URL
     const xtreamApiUrl = `${fixedServerUrl}/api/xtream?username=${username}&password=${password}&channels=${encodeURIComponent(JSON.stringify(channels))}`;

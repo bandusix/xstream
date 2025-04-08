@@ -165,8 +165,8 @@ app.post('/api/upload-m3u', upload.single('m3uFile'), (req, res) => {
     const fixedServerUrl = 'https://xstream-production.up.railway.app/8080';
 
     // 用户名和密码（假设从请求中获取）
-    const username = req.body.username || 'defaultUser';
-    const password = req.body.password || 'defaultPass';
+    const username = req.session.userId || 'defaultUser'; // 使用会话中的用户ID作为用户名
+    const password = 'defaultPass'; // 可以根据需要生成或存储密码
 
     // 生成Xtream API URL
     const xtreamApiUrl = `${fixedServerUrl}/api/xtream?username=${username}&password=${password}&channels=${encodeURIComponent(JSON.stringify(channels))}`;
