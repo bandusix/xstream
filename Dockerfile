@@ -1,10 +1,14 @@
-FROM node:lts-alpine
-ENV NODE_ENV=production
+FROM node:16-alpine
+
+# 设置工作目录
 WORKDIR /usr/src/app
-COPY ["package.json", "package-lock.json*", "npm-shrinkwrap.json*", "./"]
-RUN npm install --production --silent && mv node_modules ../
+
+# 复制 package.json 并安装依赖
+COPY package*.json ./
+RUN npm install
+
+# 复制所有项目文件
 COPY . .
-EXPOSE 3000
-RUN chown -R node /usr/src/app
-USER node
-CMD ["npm", "start"]
+
+# 启动优化后的 index.js
+CMD ["node", "index.js"]
