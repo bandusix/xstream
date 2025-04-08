@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xtream IPTV 播放列表生成器</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-tv"></i> Xtream IPTV 播放列表生成器</h1>
+      <div id="auth-status">
+        <span id="user-info">未登录</span>
+        <button id="logout-btn" class="btn btn-small" style="display: none;">登出</button>
+      </div>
+    </header>
+
+    <div id="auth-container" class="card">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="login">登录</button>
+        <button class="tab-btn" data-tab="register">注册</button>
+      </div>
+      
+      <div id="login" class="tab-content active">
+        <form id="login-form">
+          <div class="form-group">
+            <label for="login-username">用户名</label>
+            <input type="text" id="login-username" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">密码</label>
+            <input type="password" id="login-password" required>
+          </div>
+          <button type="submit" class="btn btn-primary">登录</button>
+        </form>
+      </div>
+      
+      <div id="register" class="tab-content">
+        <form id="register-form">
+          <div class="form-group">
+            <label for="register-username">用户名</label>
+            <input type="text" id="register-username" required>
+          </div>
+          <div class="form-group">
+            <label for="register-password">密码</label>
+            <input type="password" id="register-password" required>
+          </div>
+          <div class="form-group">
+            <label for="register-confirm-password">确认密码</label>
+            <input type="password" id="register-confirm-password" required>
+          </div>
+          <button type="submit" class="btn btn-primary">注册</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="app-container" style="display: none;">
+      <div class="card">
+        <h2><i class="fas fa-upload"></i> 上传 M3U 播放列表</h2>
+        <form id="upload-form">
+          <div class="form-group">
+            <label for="playlist-name">播放列表名称</label>
+            <input type="text" id="playlist-name" placeholder="我的播放列表">
+          </div>
+          <div class="form-group">
+            <label for="m3u-file">选择 M3U 文件</label>
+            <div class="file-input-container">
+              <input type="file" id="m3u-file" accept=".m3u">
+              <label for="m3u-file" class="file-label">选择文件</label>
+              <span id="file-name">未选择文件</span>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">上传</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2><i class="fas fa-link"></i> Xtream API 连接</h2>
+        <form id="xtream-form">
+          <div class="form-group">
+            <label for="api-url">API URL</label>
+            <input type="url" id="api-url" placeholder="http://example.com:8080" required>
+          </div>
+          <div class="form-group">
+            <label for="api-username">用户名</label>
+            <input type="text" id="api-username" required>
+          </div>
+          <div class="form-group">
+            <label for="api-password">密码</label>
+            <input type="password" id="api-password" required>
+          </div>
+          <button type="submit" class="btn btn-primary">生成播放列表</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2><i class="fas fa-list"></i> 我的播放列表</h2>
+        <div id="playlists-container">
+          <p id="no-playlists-message">暂无播放列表</p>
+          <ul id="playlists-list"></ul>
+        </div>
+      </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+  </div>
+
+  <footer>
+    <p>© 2023 Xtream IPTV 播放列表生成器 | <a href="https://github.com/yourusername/xstream-iptv-playlist-generator" target="_blank">GitHub</a></p>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
