@@ -1,4 +1,4 @@
-// DOM元素
+// DOM 元素
 const authContainer = document.getElementById('auth-container');
 const appContainer = document.getElementById('app-container');
 const userInfo = document.getElementById('user-info');
@@ -6,7 +6,6 @@ const logoutBtn = document.getElementById('logout-btn');
 const loginForm = document.getElementById('login-form');
 const registerForm = document.getElementById('register-form');
 const uploadForm = document.getElementById('upload-form');
-const xtreamForm = document.getElementById('xtream-form');
 const playlistsList = document.getElementById('playlists-list');
 const noPlaylistsMessage = document.getElementById('no-playlists-message');
 const notification = document.getElementById('notification');
@@ -15,31 +14,22 @@ const fileNameDisplay = document.getElementById('file-name');
 const tabBtns = document.querySelectorAll('.tab-btn');
 const tabContents = document.querySelectorAll('.tab-content');
 
-// 初始化应用
+// 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', () => {
-  // 检查认证状态
   checkAuthStatus();
-  
-  // 设置标签页切换
   setupTabs();
-  
-  // 设置文件输入显示
   setupFileInput();
 });
 
 // 检查用户认证状态
 async function checkAuthStatus() {
   try {
-    const response = await fetch('/api/check-auth');
+    const response = await fetch('/check-auth');
     const data = await response.json();
-    
     if (data.authenticated) {
-      // 用户已登录
       showAuthenticatedUI(data.username);
-      // 加载用户的播放列表
       loadPlaylists();
     } else {
-      // 用户未登录
       showUnauthenticatedUI();
     }
   } catch (error) {
@@ -48,18 +38,16 @@ async function checkAuthStatus() {
   }
 }
 
-// 显示已认证的UI
+// 显示已认证 UI
 function showAuthenticatedUI(username) {
   authContainer.style.display = 'none';
   appContainer.style.display = 'block';
   userInfo.textContent = `欢迎, ${username}`;
   logoutBtn.style.display = 'inline-block';
-  
-  // 设置登出按钮事件
   logoutBtn.addEventListener('click', handleLogout);
 }
 
-// 显示未认证的UI
+// 显示未认证 UI
 function showUnauthenticatedUI() {
   authContainer.style.display = 'block';
   appContainer.style.display = 'none';
@@ -71,11 +59,8 @@ function showUnauthenticatedUI() {
 function setupTabs() {
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-      // 移除所有活动标签
       tabBtns.forEach(b => b.classList.remove('active'));
       tabContents.forEach(c => c.classList.remove('active'));
-      
-      // 激活当前标签
       btn.classList.add('active');
       const tabId = btn.getAttribute('data-tab');
       document.getElementById(tabId).classList.add('active');
@@ -94,7 +79,7 @@ function setupFileInput() {
   });
 }
 
-// 通用的fetch请求处理函数
+// 通用的 fetch 请求处理函数
 async function fetchData(url, options) {
   try {
     const response = await fetch(url, options);
@@ -110,29 +95,26 @@ async function fetchData(url, options) {
   }
 }
 
-// 使用通用函数处理登录请求
+// 处理登录请求
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const username = document.getElementById('login-username').value;
   const password = document.getElementById('login-password').value;
   try {
-    const data = await fetchData('/api/login', {
+    await fetchData('/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
     showAuthenticatedUI(username);
     loadPlaylists();
     showNotification('登录成功', 'success');
-    window.location.href = '/playlists'; // 添加页面跳转
   } catch (error) {
     showNotification(error.message, 'error');
   }
 });
 
-// 使用通用函数处理注册请求
+// 处理注册请求
 registerForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const username = document.getElementById('register-username').value;
@@ -145,11 +127,9 @@ registerForm.addEventListener('submit', async (e) => {
   }
   
   try {
-    const data = await fetchData('/api/register', {
+    await fetchData('/register', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
     showNotification('注册成功', 'success');
@@ -160,54 +140,9 @@ registerForm.addEventListener('submit', async (e) => {
   }
 });
 
-// 使用通用函数处理Xtream API请求
-xtreamForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const apiUrl = document.getElementById('api-url').value;
-  const username = document.getElementById('api-username').value;
-  const password = document.getElementById('api-password').value;
-  
-  try {
-    showNotification('正在连接Xtream服务器...', 'info');
-    const data = await fetchData('/api/xtream-playlist', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ apiUrl, username, password })
-    });
-    showNotification(`播放列表生成成功: ${data.channelCount} 个频道`, 'success');
-    xtreamForm.reset();
-    loadPlaylists();
-  } catch (error) {
-    showNotification(error.message, 'error');
-  }
-});
-
-// 处理登出
-async function handleLogout() {
-  try {
-    const response = await fetch('/api/logout', {
-      method: 'POST'
-    });
-    
-    if (response.ok) {
-      showNotification('登出成功', 'success');
-      showUnauthenticatedUI();
-    } else {
-      const data = await response.json();
-      showNotification(data.error || '登出失败', 'error');
-    }
-  } catch (error) {
-    console.error('登出错误:', error);
-    showNotification('服务器连接错误', 'error');
-  }
-}
-
-// 处理M3U文件上传
+// 处理上传 M3U 文件请求，生成 xstream 协议 URL
 uploadForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  
   const playlistName = document.getElementById('playlist-name').value;
   const m3uFile = m3uFileInput.files[0];
   
@@ -221,7 +156,7 @@ uploadForm.addEventListener('submit', async (e) => {
   formData.append('m3uFile', m3uFile);
   
   try {
-    const response = await fetch('/api/upload-m3u', {
+    const response = await fetch('/upload-m3u', {
       method: 'POST',
       body: formData
     });
@@ -229,10 +164,10 @@ uploadForm.addEventListener('submit', async (e) => {
     const data = await response.json();
     
     if (response.ok) {
-      showNotification(`上传成功: ${data.channelCount} 个频道`, 'success');
+      showNotification(`上传成功: ${data.channelCount} 个频道\nXstream URL: ${data.xstreamCodeUrl}`, 'success');
       uploadForm.reset();
       fileNameDisplay.textContent = '未选择文件';
-      loadPlaylists(); // 刷新播放列表
+      loadPlaylists();
     } else {
       showNotification(data.error || '上传失败', 'error');
     }
@@ -242,46 +177,28 @@ uploadForm.addEventListener('submit', async (e) => {
   }
 });
 
-// 处理Xtream API表单提交
-xtreamForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  
-  const apiUrl = document.getElementById('api-url').value;
-  const username = document.getElementById('api-username').value;
-  const password = document.getElementById('api-password').value;
-  
+// 处理登出请求
+async function handleLogout() {
   try {
-    showNotification('正在连接Xtream服务器...', 'info');
-    
-    const response = await fetch('/api/xtream-playlist', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ apiUrl, username, password })
-    });
-    
-    const data = await response.json();
-    
+    const response = await fetch('/logout', { method: 'POST' });
     if (response.ok) {
-      showNotification(`播放列表生成成功: ${data.channelCount} 个频道`, 'success');
-      xtreamForm.reset();
-      loadPlaylists(); // 刷新播放列表
+      showNotification('登出成功', 'success');
+      showUnauthenticatedUI();
     } else {
-      showNotification(data.error || 'Xtream API连接失败', 'error');
+      const data = await response.json();
+      showNotification(data.error || '登出失败', 'error');
     }
   } catch (error) {
-    console.error('Xtream API错误:', error);
+    console.error('登出错误:', error);
     showNotification('服务器连接错误', 'error');
   }
-});
+}
 
-// 加载用户的播放列表
+// 加载当前用户播放列表
 async function loadPlaylists() {
   try {
-    const response = await fetch('/api/playlists');
+    const response = await fetch('/playlists');
     const playlists = await response.json();
-    
     if (playlists.length > 0) {
       renderPlaylists(playlists);
       noPlaylistsMessage.style.display = 'none';
@@ -295,14 +212,12 @@ async function loadPlaylists() {
   }
 }
 
-// 渲染播放列表
+// 渲染播放列表到页面中
 function renderPlaylists(playlists) {
   playlistsList.innerHTML = '';
-  
   playlists.forEach(playlist => {
     const li = document.createElement('li');
     li.className = 'playlist-item';
-    
     li.innerHTML = `
       <div class="playlist-info">
         <div class="playlist-name">${playlist.name}</div>
@@ -312,7 +227,6 @@ function renderPlaylists(playlists) {
         <button class="btn btn-small btn-primary download-btn" data-id="${playlist.id}">下载</button>
       </div>
     `;
-    
     playlistsList.appendChild(li);
   });
   
@@ -320,7 +234,7 @@ function renderPlaylists(playlists) {
   document.querySelectorAll('.download-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const playlistId = btn.getAttribute('data-id');
-      window.location.href = `/api/download/${playlistId}`;
+      window.location.href = `/download/${playlistId}`;
     });
   });
 }
