@@ -94,71 +94,93 @@ function setupFileInput() {
   });
 }
 
-// 处理登录表单提交
+// 通用的fetch请求处理函数
+async function fetchData(url, options) {
+  try {
+    const response = await fetch(url, options);
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || '请求失败');
+    }
+    return data;
+  } catch (error) {
+    console.error('请求错误:', error);
+    showNotification('服务器连接错误', 'error');
+    throw error;
+  }
+}
+
+// 使用通用函数处理登录请求
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const username = document.getElementById('login-username').value;
   const password = document.getElementById('login-password').value;
   try {
-    const response = await fetch('/api/login', {
+    const data = await fetchData('/api/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ username, password })
     });
-    const data = await response.json();
-    if (response.ok) {
-      showAuthenticatedUI(username);
-      loadPlaylists();
-      showNotification('登录成功', 'success');
-      window.location.href = '/playlists'; // 添加页面跳转
-    } else {
-      showNotification(data.error, 'error');
-    }
+    showAuthenticatedUI(username);
+    loadPlaylists();
+    showNotification('登录成功', 'success');
+    window.location.href = '/playlists'; // 添加页面跳转
   } catch (error) {
-    console.error('登录请求错误:', error);
-    showNotification('服务器连接错误', 'error');
+    showNotification(error.message, 'error');
   }
 });
 
-// 处理注册表单提交
+// 使用通用函数处理注册请求
 registerForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  
   const username = document.getElementById('register-username').value;
   const password = document.getElementById('register-password').value;
   const confirmPassword = document.getElementById('register-confirm-password').value;
   
-  // 验证密码
   if (password !== confirmPassword) {
     showNotification('密码不匹配', 'error');
     return;
   }
   
   try {
-    const response = await fetch('/api/register', {
+    const data = await fetchData('/api/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ username, password })
     });
-    
-    const data = await response.json();
-    
-    if (response.ok) {
-      showNotification('注册成功', 'success');
-      // 切换到登录标签
-      document.querySelector('[data-tab="login"]').click();
-      // 清空注册表单
-      registerForm.reset();
-    } else {
-      showNotification(data.error || '注册失败', 'error');
-    }
+    showNotification('注册成功', 'success');
+    document.querySelector('[data-tab="login"]').click();
+    registerForm.reset();
   } catch (error) {
-    console.error('注册错误:', error);
-    showNotification('服务器连接错误', 'error');
+    showNotification(error.message, 'error');
+  }
+});
+
+// 使用通用函数处理Xtream API请求
+xtreamForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const apiUrl = document.getElementById('api-url').value;
+  const username = document.getElementById('api-username').value;
+  const password = document.getElementById('api-password').value;
+  
+  try {
+    showNotification('正在连接Xtream服务器...', 'info');
+    const data = await fetchData('/api/xtream-playlist', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ apiUrl, username, password })
+    });
+    showNotification(`播放列表生成成功: ${data.channelCount} 个频道`, 'success');
+    xtreamForm.reset();
+    loadPlaylists();
+  } catch (error) {
+    showNotification(error.message, 'error');
   }
 });
 
