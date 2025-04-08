@@ -16,6 +16,7 @@ const tabContents = document.querySelectorAll('.tab-content');
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('[APP] DOMContentLoaded: 初始化开始');
   checkAuthStatus();
   setupTabs();
   setupFileInput();
@@ -24,16 +25,25 @@ document.addEventListener('DOMContentLoaded', () => {
 // 检查用户认证状态
 async function checkAuthStatus() {
   try {
+    console.log('[AUTH] 检查用户认证状态...');
     const response = await fetch('/check-auth');
-    const data = await response.json();
-    if (data.authenticated) {
-      showAuthenticatedUI(data.username);
-      loadPlaylists();
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      const data = await response.json();
+      console.log('[AUTH] 返回数据：', data);
+      if (data.authenticated) {
+        showAuthenticatedUI(data.username);
+        loadPlaylists();
+      } else {
+        showUnauthenticatedUI();
+      }
     } else {
-      showUnauthenticatedUI();
+      const text = await response.text();
+      console.error('[AUTH] 预期 JSON，但实际返回：', text);
+      showNotification('服务器返回数据异常', 'error');
     }
   } catch (error) {
-    console.error('检查认证状态错误:', error);
+    console.error('[AUTH] 检查认证状态错误:', error);
     showNotification('服务器连接错误', 'error');
   }
 }
@@ -64,6 +74,7 @@ function setupTabs() {
       btn.classList.add('active');
       const tabId = btn.getAttribute('data-tab');
       document.getElementById(tabId).classList.add('active');
+      console.log(`[TABS] 切换到 ${tabId} 标签页`);
     });
   });
 }
@@ -73,23 +84,33 @@ function setupFileInput() {
   m3uFileInput.addEventListener('change', (e) => {
     if (e.target.files.length > 0) {
       fileNameDisplay.textContent = e.target.files[0].name;
+      console.log('[FILE] 选择文件：', e.target.files[0].name);
     } else {
       fileNameDisplay.textContent = '未选择文件';
     }
   });
 }
 
-// 通用的 fetch 请求处理函数
+// 通用的 fetch 请求处理函数，增加返回数据类型检查和日志输出
 async function fetchData(url, options) {
   try {
+    console.log(`[FETCH] 请求 ${url}，选项：`, options);
     const response = await fetch(url, options);
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || '请求失败');
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      const data = await response.json();
+      console.log(`[FETCH] ${url} 返回 JSON 数据：`, data);
+      if (!response.ok) {
+        throw new Error(data.error || '请求失败');
+      }
+      return data;
+    } else {
+      const text = await response.text();
+      console.error(`[FETCH] ${url} 预期 JSON，但返回的数据为：`, text);
+      throw new Error('服务器返回非 JSON 格式数据');
     }
-    return data;
   } catch (error) {
-    console.error('请求错误:', error);
+    console.error(`[FETCH] 请求 ${url} 出错:`, error);
     showNotification('服务器连接错误', 'error');
     throw error;
   }
@@ -106,6 +127,7 @@ loginForm.addEventListener('submit', async (e) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
+    console.log('[LOGIN] 登录成功');
     showAuthenticatedUI(username);
     loadPlaylists();
     showNotification('登录成功', 'success');
@@ -132,6 +154,7 @@ registerForm.addEventListener('submit', async (e) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
+    console.log('[REGISTER] 注册成功');
     showNotification('注册成功', 'success');
     document.querySelector('[data-tab="login"]').click();
     registerForm.reset();
@@ -156,23 +179,30 @@ uploadForm.addEventListener('submit', async (e) => {
   formData.append('m3uFile', m3uFile);
   
   try {
+    console.log('[UPLOAD] 开始上传文件...');
     const response = await fetch('/upload-m3u', {
       method: 'POST',
       body: formData
     });
-    
-    const data = await response.json();
-    
-    if (response.ok) {
-      showNotification(`上传成功: ${data.channelCount} 个频道\nXstream URL: ${data.xstreamCodeUrl}`, 'success');
-      uploadForm.reset();
-      fileNameDisplay.textContent = '未选择文件';
-      loadPlaylists();
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      const data = await response.json();
+      console.log('[UPLOAD] 返回数据：', data);
+      if (response.ok) {
+        showNotification(`上传成功: ${data.channelCount} 个频道\nXstream URL: ${data.xstreamCodeUrl}`, 'success');
+        uploadForm.reset();
+        fileNameDisplay.textContent = '未选择文件';
+        loadPlaylists();
+      } else {
+        showNotification(data.error || '上传失败', 'error');
+      }
     } else {
-      showNotification(data.error || '上传失败', 'error');
+      const text = await response.text();
+      console.error('[UPLOAD] 预期 JSON，但返回的数据为：', text);
+      showNotification('服务器返回非 JSON 格式数据', 'error');
     }
   } catch (error) {
-    console.error('上传错误:', error);
+    console.error('[UPLOAD] 上传错误:', error);
     showNotification('服务器连接错误', 'error');
   }
 });
@@ -182,14 +212,16 @@ async function handleLogout() {
   try {
     const response = await fetch('/logout', { method: 'POST' });
     if (response.ok) {
+      console.log('[LOGOUT] 登出成功');
       showNotification('登出成功', 'success');
       showUnauthenticatedUI();
     } else {
       const data = await response.json();
+      console.error('[LOGOUT] 登出失败：', data);
       showNotification(data.error || '登出失败', 'error');
     }
   } catch (error) {
-    console.error('登出错误:', error);
+    console.error('[LOGOUT] 请求错误:', error);
     showNotification('服务器连接错误', 'error');
   }
 }
@@ -197,17 +229,26 @@ async function handleLogout() {
 // 加载当前用户播放列表
 async function loadPlaylists() {
   try {
+    console.log('[PLAYLISTS] 开始加载播放列表...');
     const response = await fetch('/playlists');
-    const playlists = await response.json();
-    if (playlists.length > 0) {
-      renderPlaylists(playlists);
-      noPlaylistsMessage.style.display = 'none';
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      const playlists = await response.json();
+      console.log('[PLAYLISTS] 返回数据：', playlists);
+      if (playlists.length > 0) {
+        renderPlaylists(playlists);
+        noPlaylistsMessage.style.display = 'none';
+      } else {
+        playlistsList.innerHTML = '';
+        noPlaylistsMessage.style.display = 'block';
+      }
     } else {
-      playlistsList.innerHTML = '';
-      noPlaylistsMessage.style.display = 'block';
+      const text = await response.text();
+      console.error('[PLAYLISTS] 预期 JSON，但返回的数据为：', text);
+      showNotification('服务器返回非 JSON 格式数据', 'error');
     }
   } catch (error) {
-    console.error('加载播放列表错误:', error);
+    console.error('[PLAYLISTS] 加载播放列表错误:', error);
     showNotification('无法加载播放列表', 'error');
   }
 }
@@ -234,6 +275,7 @@ function renderPlaylists(playlists) {
   document.querySelectorAll('.download-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const playlistId = btn.getAttribute('data-id');
+      console.log('[DOWNLOAD] 开始下载播放列表：', playlistId);
       window.location.href = `/download/${playlistId}`;
     });
   });
@@ -246,7 +288,8 @@ function showNotification(message, type = 'info') {
   notification.classList.add(type);
   notification.classList.add('show');
   
+  // 延长显示时间，确保日志完整可见（8秒）
   setTimeout(() => {
     notification.classList.remove('show');
-  }, 3000);
+  }, 8000);
 }

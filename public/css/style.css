@@ -263,7 +263,11 @@ header h1 i {
   opacity: 0;
   transition: var(--transition);
   z-index: 1000;
-  max-width: 300px;
+  
+  /* 修改：放宽最大宽度，并允许自动换行 */
+  max-width: 80vw;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 .notification.show {
