@@ -2,10 +2,10 @@
   "name": "xstream-iptv-playlist-generator",
   "version": "1.0.0",
   "description": "生成Xtream IPTV播放列表的Web应用",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "keywords": [
     "iptv",

@@ -19,6 +19,7 @@ app.use(session({
   cookie: { secure: process.env.NODE_ENV === 'production' }
 }));
 
+// 解析请求体
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -46,11 +47,12 @@ const upload = multer({
   }
 });
 
+// 内存数据存储
 let users = [];
 let playlists = [];
 
 // 用户注册
-app.post('/register', async (req, res) => {
+app.post('/register', async (req, res, next) => {
   try {
     const { username, password } = req.body;
     if (!username || !password) {
@@ -65,13 +67,12 @@ app.post('/register', async (req, res) => {
     req.session.userId = newUser.id;
     res.status(201).json({ message: '用户注册成功' });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: '服务器错误' });
+    next(e);
   }
 });
 
 // 用户登录
-app.post('/login', async (req, res) => {
+app.post('/login', async (req, res, next) => {
   try {
     const { username, password } = req.body;
     const user = users.find(u => u.username === username);
@@ -85,8 +86,7 @@ app.post('/login', async (req, res) => {
     req.session.userId = user.id;
     res.json({ message: '登录成功' });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: '服务器错误' });
+    next(e);
   }
 });
 
@@ -100,15 +100,15 @@ app.get('/check-auth', (req, res) => {
 });
 
 // 用户登出
-app.post('/logout', (req, res) => {
+app.post('/logout', (req, res, next) => {
   req.session.destroy(err => {
-    if (err) return res.status(500).json({ error: '登出失败' });
+    if (err) return next(err);
     res.json({ message: '登出成功' });
   });
 });
 
 // 上传 M3U 文件并生成 xstream 协议 URL
-app.post('/upload-m3u', upload.single('m3uFile'), (req, res) => {
+app.post('/upload-m3u', upload.single('m3uFile'), (req, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: '没有上传文件' });
@@ -122,7 +122,7 @@ app.post('/upload-m3u', upload.single('m3uFile'), (req, res) => {
     const username = req.session.userId || 'defaultUser';
     const password = 'defaultPass';
     
-    // 生成 xstream 协议 URL 格式
+    // 生成 xstream 协议 URL 格式：xstream://?username=...&password=...&channels=...
     const xstreamCodeUrl = `xstream://?username=${username}&password=${password}&channels=${encodeURIComponent(JSON.stringify(channels))}`;
     
     // 保存播放列表信息
@@ -143,12 +143,11 @@ app.post('/upload-m3u', upload.single('m3uFile'), (req, res) => {
       xstreamCodeUrl
     });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: '服务器错误' });
+    next(e);
   }
 });
 
-// 获取用户播放列表
+// 获取当前用户播放列表
 app.get('/playlists', (req, res) => {
   if (!req.session.userId) {
     return res.status(401).json({ error: '未授权' });
@@ -181,7 +180,6 @@ function parseM3U(content) {
     const line = lines[i].trim();
     
     if (line.startsWith('#EXTINF:')) {
-      // 解析频道信息
       const infoMatch = line.match(/#EXTINF:(-?\d+)(?:.*tvg-id="([^"]*)")?(?:.*tvg-name="([^"]*)")?(?:.*tvg-logo="([^"]*)")?(?:.*group-title="([^"]*)")?(?:.*,(.*))?/);
       if (infoMatch) {
         currentChannel = {
@@ -193,7 +191,6 @@ function parseM3U(content) {
           title: infoMatch[6] || `Channel ${channels.length + 1}`
         };
       } else {
-        // 简单后备解析
         const titleMatch = line.match(/,(.*)$/);
         currentChannel = {
           duration: '-1',
@@ -201,7 +198,6 @@ function parseM3U(content) {
         };
       }
     } else if (line && !line.startsWith('#') && currentChannel) {
-      // 添加频道 URL 并存入频道列表
       currentChannel.url = line;
       channels.push(currentChannel);
       currentChannel = null;
@@ -210,6 +206,12 @@ function parseM3U(content) {
   
   return channels;
 }
+
+// 全局错误处理中间件，保证出错时返回 JSON 格式数据
+app.use((err, req, res, next) => {
+  console.error('全局捕获错误：', err);
+  res.status(500).json({ error: '服务器发生错误' });
+});
 
 app.listen(port, () => {
   console.log(`服务器运行在 http://localhost:${port}`);
