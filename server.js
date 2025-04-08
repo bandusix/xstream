@@ -161,13 +161,24 @@ app.post('/api/upload-m3u', upload.single('m3uFile'), (req, res) => {
     // 解析M3U文件（简单实现，实际应用可能需要更复杂的解析）
     const channels = parseM3U(fileContent);
     
+    // 强制使用指定的API服务器URL
+    const fixedServerUrl = 'https://xstream-production.up.railway.app/8080';
+
+    // 用户名和密码（假设从请求中获取）
+    const username = req.body.username || 'defaultUser';
+    const password = req.body.password || 'defaultPass';
+
+    // 生成Xtream API URL
+    const xtreamApiUrl = `${fixedServerUrl}/api/xtream?username=${username}&password=${password}&channels=${encodeURIComponent(JSON.stringify(channels))}`;
+
     // 保存播放列表信息
     const playlist = {
       id: Date.now().toString(),
       name: req.body.name || path.basename(req.file.originalname, '.m3u'),
       userId: req.session.userId,
       filePath,
-      channels
+      channels,
+      xtreamApiUrl // 保存生成的URL
     };
     
     playlists.push(playlist);
@@ -175,7 +186,8 @@ app.post('/api/upload-m3u', upload.single('m3uFile'), (req, res) => {
     res.json({ 
       message: '文件上传成功', 
       playlistId: playlist.id,
-      channelCount: channels.length 
+      channelCount: channels.length,
+      xtreamApiUrl // 返回生成的URL
     });
   } catch (error) {
     console.error('文件上传错误:', error);

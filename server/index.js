@@ -8,7 +8,7 @@ const upload = multer({ dest: 'uploads/' });
 
 app.post('/upload-m3u', upload.single('m3uFile'), (req, res) => {
   const filePath = req.file.path;
-  const serverDomain = req.headers.host; // 获取当前服务器域名
+  const fixedServerUrl = 'https://xstream-production.up.railway.app/8080'; // 强制使用指定的API服务器URL
 
   // 解析M3U文件并生成Xtream API URL
   fs.readFile(filePath, 'utf8', (err, data) => {
@@ -24,7 +24,7 @@ app.post('/upload-m3u', upload.single('m3uFile'), (req, res) => {
     const password = req.body.password || 'defaultPass';
 
     // 生成Xtream API URL
-    const xtreamApiUrl = `http://${serverDomain}/api/xtream?username=${username}&password=${password}&channels=${encodeURIComponent(JSON.stringify(channels))}`;
+    const xtreamApiUrl = `${fixedServerUrl}/api/xtream?username=${username}&password=${password}&channels=${encodeURIComponent(JSON.stringify(channels))}`;
 
     // 返回生成的URL
     res.json({ xtreamApiUrl });
