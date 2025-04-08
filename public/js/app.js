@@ -97,10 +97,8 @@ function setupFileInput() {
 // 处理登录表单提交
 loginForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  
   const username = document.getElementById('login-username').value;
   const password = document.getElementById('login-password').value;
-  
   try {
     const response = await fetch('/api/login', {
       method: 'POST',
@@ -109,17 +107,17 @@ loginForm.addEventListener('submit', async (e) => {
       },
       body: JSON.stringify({ username, password })
     });
-    
     const data = await response.json();
-    
     if (response.ok) {
+      showAuthenticatedUI(username);
+      loadPlaylists();
       showNotification('登录成功', 'success');
-      checkAuthStatus(); // 刷新UI状态
+      window.location.href = '/playlists'; // 添加页面跳转
     } else {
-      showNotification(data.error || '登录失败', 'error');
+      showNotification(data.error, 'error');
     }
   } catch (error) {
-    console.error('登录错误:', error);
+    console.error('登录请求错误:', error);
     showNotification('服务器连接错误', 'error');
   }
 });
